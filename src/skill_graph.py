@@ -5,33 +5,51 @@ from typing import Dict, List
 @dataclass
 class Skill:
     name: str
-    dependencies: List[str]
+    data_sources: List[str]
+
+@dataclass
+class Edge:
+    from_node: str
+    to_node: str
 
 class SkillGraph:
     def __init__(self):
-        self.skills = {}
+        self.skills: Dict[str, Skill] = {}
+        self.edges: List[Edge] = []
+        self.data_sources: Dict[str, Dict] = {}
 
     def add_skill(self, skill: Skill):
-        self.skills[skill.name] = skill.dependencies
+        self.skills[skill.name] = skill
 
-    def generate_graph(self, target_skill: str) -> Dict:
+    def add_edge(self, edge: Edge):
+        self.edges.append(edge)
+
+    def add_data_source(self, name: str):
+        self.data_sources[name] = {'edges': []}
+
+    def visualize(self):
         graph = {}
-        visited = set()
-
-        def recursive_lookup(skill: str):
-            if skill not in self.skills:
-                return
-            if skill in visited:
-                return
-            visited.add(skill)
-            dependencies = self.skills.get(skill, [])
-            graph[skill] = dependencies
-            for dependency in dependencies:
-                recursive_lookup(dependency)
-
-        recursive_lookup(target_skill)
+        for skill in self.skills.values():
+            graph[skill.name] = {'data_sources': skill.data_sources, 'edges': []}
+        for data_source in self.data_sources:
+            graph[data_source] = self.data_sources[data_source]
+        for edge in self.edges:
+            if edge.from_node in graph:
+                graph[edge.from_node]['edges'].append(edge.to_node)
         return graph
 
-    def api_endpoint(self, target_skill: str) -> str:
-        graph = self.generate_graph(target_skill)
-        return json.dumps(graph)
+    def load(self, data: Dict):
+        for skill_data in data['skills']:
+            skill = Skill(name=skill_data['name'], data_sources=skill_data['data_sources'])
+            self.add_skill(skill)
+        for edge_data in data['edges']:
+            edge = Edge(from_node=edge_data['from_node'], to_node=edge_data['to_node'])
+            self.add_edge(edge)
+            if edge.from_node not in self.data_sources:
+                self.add_data_source(edge.from_node)
+
+    def get_nodes(self):
+        return list(self.skills.keys()) + list(self.data_sources.keys())
+
+    def get_edges(self):
+        return self.edges

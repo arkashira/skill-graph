@@ -1,32 +1,44 @@
 import pytest
-from skill_graph import SkillGraph, Skill
+from skill_graph import Skill, Edge, SkillGraph
 
-def test_add_skill():
+def test_skill_graph():
     graph = SkillGraph()
-    skill = Skill("Python", ["Programming"])
-    graph.add_skill(skill)
-    assert graph.skills["Python"] == ["Programming"]
+    skill1 = Skill(name='skill1', data_sources=['data_source1'])
+    skill2 = Skill(name='skill2', data_sources=['data_source2'])
+    edge = Edge(from_node='data_source1', to_node='skill1')
+    graph.add_skill(skill1)
+    graph.add_skill(skill2)
+    graph.add_edge(edge)
+    graph.add_data_source('data_source1')
+    assert len(graph.get_nodes()) == 3
+    assert len(graph.get_edges()) == 1
 
-def test_generate_graph():
+def test_skill_graph_load():
     graph = SkillGraph()
-    graph.add_skill(Skill("Python", ["Programming"]))
-    graph.add_skill(Skill("Programming", ["Algorithms", "Data Structures"]))
-    result = graph.generate_graph("Python")
-    assert result == {
-        "Python": ["Programming"],
-        "Programming": ["Algorithms", "Data Structures"]
+    data = {
+        'skills': [
+            {'name': 'skill1', 'data_sources': ['data_source1']},
+            {'name': 'skill2', 'data_sources': ['data_source2']}
+        ],
+        'edges': [
+            {'from_node': 'data_source1', 'to_node': 'skill1'}
+        ]
     }
+    graph.load(data)
+    assert len(graph.get_nodes()) == 3
+    assert len(graph.get_edges()) == 1
 
-def test_api_endpoint():
+def test_skill_graph_visualize():
     graph = SkillGraph()
-    graph.add_skill(Skill("Python", ["Programming"]))
-    graph.add_skill(Skill("Programming", ["Algorithms", "Data Structures"]))
-    result = graph.api_endpoint("Python")
-    expected = '{"Python": ["Programming"], "Programming": ["Algorithms", "Data Structures"]}'
-    assert result == expected
-
-def test_generate_graph_edge_case():
-    graph = SkillGraph()
-    graph.add_skill(Skill("Python", ["Programming"]))
-    result = graph.generate_graph("Unknown Skill")
-    assert result == {}
+    skill1 = Skill(name='skill1', data_sources=['data_source1'])
+    skill2 = Skill(name='skill2', data_sources=['data_source2'])
+    edge = Edge(from_node='data_source1', to_node='skill1')
+    graph.add_skill(skill1)
+    graph.add_skill(skill2)
+    graph.add_edge(edge)
+    graph.add_data_source('data_source1')
+    visualized_graph = graph.visualize()
+    assert len(visualized_graph) == 3
+    assert 'skill1' in visualized_graph
+    assert 'skill2' in visualized_graph
+    assert 'data_source1' in visualized_graph
